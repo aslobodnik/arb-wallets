@@ -83,6 +83,11 @@ export function Client({
     0n
   );
 
+  const totalUsdc = filteredData.reduce(
+    (acc, curr) => acc + (curr.usdcBalance || 0n),
+    0n
+  );
+
   const date = new Date(Number(block));
   console.log(date.toString());
 
@@ -188,6 +193,9 @@ export function Client({
                     {formatCurrency(totalEth as bigint, 18, 1)} &nbsp;ETH
                   </span>
                   <span>
+                    {formatCurrency(totalUsdc as bigint, 6, 1, true)} USDC
+                  </span>
+                  <span>
                     {formatCurrency(totalArb as bigint, 18, 1, true)} &nbsp;ARB
                   </span>
                 </div>
@@ -250,6 +258,15 @@ export function Client({
                       </span>
                       <span>
                         {formatCurrency(
+                          multisig.usdcBalance as bigint,
+                          6,
+                          1,
+                          true
+                        )}{" "}
+                        USDC
+                      </span>
+                      <span>
+                        {formatCurrency(
                           multisig.arbBalance as bigint,
                           18,
                           1,
@@ -275,6 +292,7 @@ export function Client({
                 <TableCell className="text-right font-mono font-bold">
                   <div className="flex flex-col">
                     <span>{formatCurrency(totalEth, 18, 1)} &nbsp;ETH</span>
+                    <span>{formatCurrency(totalUsdc, 6, 0, true)} USDC</span>
                     <span>
                       {formatCurrency(totalArb, 18, 0, true)} &nbsp;ARB
                     </span>
@@ -409,7 +427,7 @@ const isZero = (amount: bigint, tokenDecimals: number): boolean => {
   } else {
     const amountNumber = parseFloat(formatUnits(amount, tokenDecimals));
 
-    return amountNumber <= 0.01;
+    return amountNumber <= 0.05;
   }
 };
 

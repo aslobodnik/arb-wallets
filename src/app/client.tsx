@@ -30,18 +30,16 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useEnsName } from "wagmi";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Address, formatUnits } from "viem";
-import { ContractInfo, MultiSig, TokenDetails } from "./types/types";
+import { MultiSig } from "./types/types";
 import { useState } from "react";
 
 export function Client({
   multiSigData,
-  opsData,
-  endowmentData,
+
   block,
 }: {
   multiSigData: MultiSig[];
-  opsData: ContractInfo[];
-  endowmentData: TokenDetails[];
+
   block: bigint;
 }) {
   const [selectedWg, setSelectedWg] = useState<string>("all");
@@ -58,19 +56,19 @@ export function Client({
         (showZeroBalance ||
           !isZero(multisig.ethBalance || 0n, 18) ||
           !isZero(multisig.usdcBalance || 0n, 6) ||
-          !isZero(multisig.ensBalance || 0n, 18))
+          !isZero(multisig.arbBalance || 0n, 18))
       );
     })
     .sort((a, b) => {
       // Handle cases where label might be undefined or null
-      const labelA = a.label || "";
-      const labelB = b.label || "";
+      const labelA = a.arbBalance || 0;
+      const labelB = b.arbBalance || 0;
 
       // Compare for alphabetical sorting
-      if (labelA < labelB) {
+      if (labelA > labelB) {
         return -1;
       }
-      if (labelA > labelB) {
+      if (labelA < labelB) {
         return 1;
       }
       return 0;
@@ -80,12 +78,8 @@ export function Client({
     (acc, curr) => acc + (curr.ethBalance || 0n),
     0n
   );
-  const totalUsdc = filteredData.reduce(
-    (acc, curr) => acc + (curr.usdcBalance || 0n),
-    0n
-  );
-  const totalEns = filteredData.reduce(
-    (acc, curr) => acc + (curr.ensBalance || 0n),
+  const totalArb = filteredData.reduce(
+    (acc, curr) => acc + (curr.arbBalance || 0n),
     0n
   );
 
@@ -95,7 +89,7 @@ export function Client({
   return (
     <main className="flex min-h-screen flex-col  items-center sm:p-24 mx-auto">
       <h1 className="sm:text-3xl text-2xl sm:mt-0 my-10 font-extrabold ">
-        Working Group Multisigs
+        Arbitrum Multisigs
       </h1>
       <div className="absolute mt-9 text-xs  text-gray-200">
         {date.toLocaleDateString()}
@@ -103,11 +97,10 @@ export function Client({
       <div>
         {/*Desktop Table*/}
         <Table className="hidden sm:block">
-          {/* <TableCaption>ENS DAO Wallets</TableCaption> */}
           <TableHeader>
             <TableRow>
-              <TableHead className="w-[100px]  text-lg text-center">
-                <Select onValueChange={(value) => setSelectedWg(value)}>
+              <TableHead className="min-w-48  text-lg text-center">
+                {/* <Select onValueChange={(value) => setSelectedWg(value)}>
                   <SelectTrigger className="w-[180px] text-lg">
                     <SelectValue placeholder="Working Group" />
                   </SelectTrigger>
@@ -117,12 +110,15 @@ export function Client({
                     <SelectItem value="Ecosystem">Ecosystem</SelectItem>
                     <SelectItem value="Metagov">Metagov</SelectItem>
                   </SelectContent>
-                </Select>
+                </Select> */}
+                Multisig
               </TableHead>
-              <TableHead className="text-center text-lg">Signers</TableHead>
-              <TableHead className="text-right text-lg">ETH</TableHead>
-              <TableHead className="text-right text-lg">USDC</TableHead>
-              <TableHead className="text-right text-lg">ENS</TableHead>
+              <TableHead className="text-center text-lg   min-w-48">
+                Signers
+              </TableHead>
+              <TableHead className="text-right text-lg w-60">
+                Balances
+              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -147,14 +143,32 @@ export function Client({
                     />
                   ))}
                 </TableCell>
+
                 <TableCell className="text-right font-mono  ">
-                  {formatCurrency(multisig.ethBalance as bigint, 18, 1)}
-                </TableCell>
-                <TableCell className="text-right font-mono  ">
-                  {formatCurrency(multisig.usdcBalance as bigint, 6, 0, true)}
-                </TableCell>
-                <TableCell className="text-right font-mono  ">
-                  {formatCurrency(multisig.ensBalance as bigint, 18, 0, true)}
+                  <div className="flex text-right font-mono flex-col">
+                    <span>
+                      {formatCurrency(multisig.ethBalance as bigint, 18, 1)}{" "}
+                      &nbsp;ETH
+                    </span>
+                    <span>
+                      {formatCurrency(
+                        multisig.arbBalance as bigint,
+                        18,
+                        1,
+                        true
+                      )}{" "}
+                      &nbsp;ARB
+                    </span>
+                    <span>
+                      {formatCurrency(
+                        multisig.usdcBalance as bigint,
+                        6,
+                        1,
+                        true
+                      )}{" "}
+                      USDC
+                    </span>
+                  </div>
                 </TableCell>
               </TableRow>
             ))}
@@ -167,14 +181,16 @@ export function Client({
                 Show Zero Balance
               </TableCell>
               <TableCell className="text-right">Total</TableCell>
+
               <TableCell className="text-right">
-                {formatCurrency(totalEth, 18, 1)} ETH
-              </TableCell>
-              <TableCell className="text-right">
-                {formatCurrency(totalUsdc, 6, 0, true)} USDC
-              </TableCell>
-              <TableCell className="text-right">
-                {formatCurrency(totalEns, 18, 0, true)} ENS
+                <div className="flex text-right font-mono flex-col">
+                  <span>
+                    {formatCurrency(totalEth as bigint, 18, 1)} &nbsp;ETH
+                  </span>
+                  <span>
+                    {formatCurrency(totalArb as bigint, 18, 1, true)} &nbsp;ARB
+                  </span>
+                </div>
               </TableCell>
             </TableRow>
           </TableBody>
@@ -185,7 +201,7 @@ export function Client({
             <TableHeader>
               <TableRow>
                 <TableHead className="text-center">
-                  <Select onValueChange={(value) => setSelectedWg(value)}>
+                  {/* <Select onValueChange={(value) => setSelectedWg(value)}>
                     <SelectTrigger className="max-w-36">
                       <SelectValue placeholder="Working Group" />
                     </SelectTrigger>
@@ -195,7 +211,8 @@ export function Client({
                       <SelectItem value="Ecosystem">Ecosystem</SelectItem>
                       <SelectItem value="Metagov">Metagov</SelectItem>
                     </SelectContent>
-                  </Select>
+                  </Select> */}
+                  Multisig
                 </TableHead>
                 <TableHead className="text-center">Signers</TableHead>
                 <TableHead className="text-center  ">Balances</TableHead>
@@ -224,6 +241,7 @@ export function Client({
                       />
                     ))}
                   </TableCell>
+                  {/*Balance Summary*/}
                   <TableCell className="text-xs">
                     <div className="flex text-right font-mono flex-col">
                       <span>
@@ -232,21 +250,12 @@ export function Client({
                       </span>
                       <span>
                         {formatCurrency(
-                          multisig.usdcBalance as bigint,
-                          6,
-                          0,
-                          true
-                        )}{" "}
-                        USDC
-                      </span>
-                      <span>
-                        {formatCurrency(
-                          multisig.ensBalance as bigint,
+                          multisig.arbBalance as bigint,
                           18,
-                          0,
+                          1,
                           true
                         )}{" "}
-                        &nbsp;ENS
+                        &nbsp;ARB
                       </span>
                     </div>
                   </TableCell>
@@ -266,9 +275,8 @@ export function Client({
                 <TableCell className="text-right font-mono font-bold">
                   <div className="flex flex-col">
                     <span>{formatCurrency(totalEth, 18, 1)} &nbsp;ETH</span>
-                    <span>{formatCurrency(totalUsdc, 6, 0, true)} USDC</span>
                     <span>
-                      {formatCurrency(totalEns, 18, 0, true)} &nbsp;ENS
+                      {formatCurrency(totalArb, 18, 0, true)} &nbsp;ARB
                     </span>
                   </div>
                 </TableCell>
@@ -277,8 +285,6 @@ export function Client({
           </Table>
         </div>
       </div>
-      <ContractsTable opsData={opsData} />
-      <EndowmentTable endowmentData={endowmentData} />
     </main>
   );
 }
@@ -338,6 +344,7 @@ function WalletAddress({ address }: { address: Address }) {
           onClick={() =>
             openEtherScan({
               address: address,
+              chain: "arb",
             })
           }
           className="flex flex-col gap-1"
@@ -358,6 +365,7 @@ function WalletAddress({ address }: { address: Address }) {
           onClick={() =>
             openEtherScan({
               address: address,
+              chain: "arb",
             })
           }
           className=""
@@ -394,201 +402,6 @@ function formatShort(num: number): string {
   return num.toString(); // Fallback for very large numbers
 }
 
-function ContractsTable({ opsData }: { opsData: ContractInfo[] }) {
-  return (
-    <div className=" w-full max-w-3xl ">
-      <h2 className="sm:text-3xl text-2xl mt-10 sm:my-10 font-extrabold text-center">
-        DAO Operational Contracts
-      </h2>
-      <div className="overflow-x-auto mx-4 sm:w-full">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="sm:text-lg text-center">Contract</TableHead>
-              <TableHead className="text-center sm:text-lg ">
-                Description
-              </TableHead>
-              <TableHead className=" text-right text-lg ">Balance</TableHead>
-            </TableRow>
-          </TableHeader>
-
-          <TableBody>
-            {opsData.map((contract, index) => (
-              <TableRow key={index}>
-                <TableCell className="font-medium sm:min-w-52">
-                  <div className="text-xs sm:text-base text-left text-gray-800">
-                    {contract.label || "N/A"}
-                  </div>
-                  <div className="text-xs sm:text-base text-left ">
-                    <WalletAddress address={contract.address} />
-                  </div>
-                </TableCell>
-
-                <TableCell className="sm:min-w-56 max-w-96 flex-wrap">
-                  {contract.description}
-                </TableCell>
-
-                <TableCell className="text-right font-mono ">
-                  <div className="flex flex-col">
-                    <span>
-                      {formatCurrency(contract.ethBalance || 0n, 18, 1)}
-                      &nbsp;&nbsp;ETH
-                    </span>
-                    <span>
-                      {formatCurrency(contract.ensBalance || 0n, 18, 1, true)}
-                      &nbsp;&nbsp;ENS
-                    </span>
-                    <span>
-                      {formatCurrency(contract.usdcBalance || 0n, 6, 0, true)}
-                      &nbsp;USDC
-                    </span>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
-    </div>
-  );
-}
-
-function EndowmentTable({ endowmentData }: { endowmentData: TokenDetails[] }) {
-  const filteredData = endowmentData
-    .filter((multisig) => {
-      return !isZero(multisig.balance || 0n, multisig.decimals);
-    })
-    .sort((a, b) => {
-      // Handle cases where label might be undefined or null
-      const labelA = a.usdValue || 0n;
-      const labelB = b.usdValue || 0n;
-
-      if (labelA > labelB) {
-        return -1;
-      }
-      if (labelA < labelB) {
-        return 1;
-      }
-      return 0;
-    });
-
-  const totalUsdValue = endowmentData.reduce((accumulator, token) => {
-    return accumulator + (token.usdValue || 0n);
-  }, 0n);
-
-  return (
-    <div className=" w-full max-w-3xl ">
-      <h2 className=" flex flex-col sm:text-3xl text-2xl mt-10 sm:my-10 font-extrabold text-center">
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger> Endowment Balances</TooltipTrigger>
-            <TooltipContent
-              copyText="0x4F2083f5fBede34C2714aFfb3105539775f7FE64"
-              onClick={() =>
-                openEtherScan({
-                  address: "0x4F2083f5fBede34C2714aFfb3105539775f7FE64",
-                })
-              }
-              className=" font-normal"
-            >
-              0x4F2083f5fBede34C2714aFfb3105539775f7FE64
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
-      </h2>
-
-      <div className="overflow-x-auto mx-4 sm:w-full">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="sm:text-lg text-center">Token</TableHead>
-              <TableHead className="text-center sm:text-lg ">
-                Description
-              </TableHead>
-              <TableHead className=" text-right text-lg ">Balance</TableHead>
-              <TableHead className=" text-right text-lg ">USD Value</TableHead>
-            </TableRow>
-          </TableHeader>
-
-          <TableBody>
-            {filteredData.map((contract, index) => (
-              <TableRow key={index}>
-                <TableCell className="font-medium sm:min-w-48">
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger
-                        onClick={() =>
-                          openEtherScan({
-                            address:
-                              contract.address ||
-                              "0x534631Bcf33BDb069fB20A93d2fdb9e4D4dD42CF",
-                          })
-                        }
-                        className="flex flex-col gap-1"
-                      >
-                        {" "}
-                        {contract.symbol}
-                      </TooltipTrigger>
-                      <TooltipContent
-                        copyText={contract.address || ""}
-                        onClick={() =>
-                          openEtherScan({
-                            address:
-                              contract.address ||
-                              "0x534631Bcf33BDb069fB20A93d2fdb9e4D4dD42CF",
-                          })
-                        }
-                        // className=""
-                      >
-                        {contract.address}
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                </TableCell>
-
-                <TableCell className="sm:min-w-24 max-w-96 flex-wrap">
-                  {contract.name}
-                </TableCell>
-
-                <TableCell className="text-right font-mono ">
-                  <div className="flex flex-col">
-                    <span>
-                      {formatCurrency(
-                        contract.balance || 0n,
-                        contract.decimals,
-                        1,
-                        true
-                      )}
-                    </span>
-                  </div>
-                </TableCell>
-                <TableCell className="text-right font-mono ">
-                  {contract.usdValue
-                    ? formatCurrency(
-                        contract.usdValue,
-                        contract.symbol === "cUSDCv3" ? 18 : contract.decimals,
-                        1,
-                        true
-                      )
-                    : "N/A"}
-                </TableCell>
-              </TableRow>
-            ))}
-            <TableRow className="text-lg font-bold">
-              <TableCell colSpan={3} className="text-right">
-                Total
-              </TableCell>
-              <TableCell className="text-right">
-                ${formatCurrency(totalUsdValue, 18, 1, true)}
-              </TableCell>
-            </TableRow>
-          </TableBody>
-        </Table>
-      </div>
-    </div>
-  );
-}
-
 //is zero checks if the balance is less than 0.01 or undefine, if so it returns true
 const isZero = (amount: bigint, tokenDecimals: number): boolean => {
   if (amount === undefined) {
@@ -600,11 +413,23 @@ const isZero = (amount: bigint, tokenDecimals: number): boolean => {
   }
 };
 
-async function openEtherScan({ address }: { address: Address }) {
+async function openEtherScan({
+  address,
+  chain,
+}: {
+  address: Address;
+  chain?: string;
+}) {
   // Copy address to clipboard
   await navigator.clipboard.writeText(address);
+  let baseUrl;
+  if (chain === "arb") {
+    baseUrl = "https://arbiscan.io/address/";
+  } else {
+    baseUrl = "https://etherscan.io/address/";
+  }
 
   // Define the URL to open - replace with the appropriate URL format
-  const url = `https://etherscan.io/address/${address}`;
+  const url = `${baseUrl}${address}`;
   window.open(url, "_blank");
 }

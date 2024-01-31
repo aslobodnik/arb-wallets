@@ -7,8 +7,9 @@ import {
   formatUnits,
 } from "viem";
 import { Client } from "./client";
-import { mainnet } from "viem/chains";
-import { multiSigs, opsContracts, endowment } from "./data/data";
+import { mainnet, arbitrum } from "viem/chains";
+import { multiSigs } from "./data/data";
+import { Metadata } from "next";
 import { ContractInfo, MultiSig, TokenDetails } from "./types/types";
 import {
   abiBalanceOf,
@@ -20,105 +21,36 @@ import {
   abiPieOf,
   abiREthRate,
   abiUsdEthRate,
+  abiUsdArbRate,
 } from "./abi/abi";
 
 const transport = http(process.env.SERVER_URL);
 export const revalidate = 3600;
 
-const ENS_TOKEN_CONTRACT = "0xC18360217D8F7Ab5e7c516566761Ea12Ce7F9D72";
-
-const USDC_TOKEN_CONTRACT = "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48";
-const rEth = "0xae78736Cd615f374D3085123A210448E74Fc6393";
-const usdEth = "0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419";
-
-const tokenContracts = [
-  "0xC18360217D8F7Ab5e7c516566761Ea12Ce7F9D72",
-  "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
-  "0x59cD1C87501baa753d0B5B5Ab5D8416A45cD71DB",
-  "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
-  "0xc3d688B66703497DAA19211EEdff47f25384cdc3",
-  "0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84",
-  "0xae78736Cd615f374D3085123A210448E74Fc6393",
-  "0x4d5F47FA6A74757f35C14fD3a6Ef8E3C9BC514E8",
-  "0xE95A203B1a91a908F9B9CE46459d101078c2c3cb",
-  "0x6b175474e89094c44da98b954eedeac495271d0f",
-  "0xA35b1B31Ce002FBF2058D22F30f95D405200A15b",
-  "0xDd1fE5AD401D4777cE89959b7fa587e569Bf125D",
-  "0xA17581A9E3356d9A858b789D68B4d866e593aE94",
-  "0x373238337Bfe1146fb49989fc222523f83081dDb",
-  "0x1BA8603DA702602A8657980e825A6DAa03Dee93a", //USDCx
-];
+const ARB_TOKEN_CONTRACT = "0x912CE59144191C1204E64559FE8253a0e49E6548";
+const USDC_ARB_TOKEN_CONTRACT = "0xaf88d065e77c8cC2239327C5EDb3A432268e5831";
+const arbUsdc = "0xb2A824043730FE05F3DA2efaFa1CBbe83fa548D6"; //chain link arb usdc price feed
 
 const publicClient = createPublicClient({
   batch: {
     multicall: true,
   },
-  chain: mainnet,
+  chain: arbitrum,
   transport,
 });
 
+export const metadata: Metadata = {
+  title: "ARB Multisigs",
+  description: "Arbitrum Multisigs",
+};
+
 export default async function Home() {
-  const ethPrice = await getEthPrice();
-  const parsedEthPrice = BigInt(Math.round(Number(formatUnits(ethPrice, 8))));
-  const rEthRate = await getrEthRate();
-  const parsedREthRate = BigInt(
-    Math.round(Number(formatEther(rEthRate)) * 1000)
-  );
-  const rEthPrice = (parsedREthRate * parsedEthPrice) / 1000n;
-
   const multiSigData = await getMultiSigData({ multisigs: multiSigs });
-
-  const balanceData = await getBalances({
-    addresses: opsContracts.map((contract) => contract.address),
-  });
-
-  // Merge balance data back into opsContracts
-  const opsData = opsContracts.map((contract) => {
-    const balanceInfo = balanceData.find((b) => b.address === contract.address);
-    return {
-      ...contract,
-      ...balanceInfo,
-    };
-  });
-
-  const endowmentData = await fetchAllTokenDetails(
-    "0x4F2083f5fBede34C2714aFfb3105539775f7FE64"
-  );
-  const ethTokens = [
-    "aEthWETH",
-    "stETH",
-    "WETH",
-    "spWETH",
-    "cWETHv3",
-    "ankrETH",
-    "ETHx",
-  ];
-  const rEthTokens = ["rETH", "auraB-rETH-STABLE-vault"];
-
-  endowmentData.map((token) => {
-    if (ethTokens.includes(token.symbol)) {
-      // eth balue
-      token.usdValue = token.balance * parsedEthPrice;
-    } else if (rEthTokens.includes(token.symbol)) {
-      token.usdValue = token.balance * rEthPrice;
-    } else if (token.symbol === "cUSDCv3") {
-      token.usdValue = token.balance * BigInt(1e12);
-    } else {
-      token.usdValue = token.balance;
-    }
-
-    return token;
-  });
   const blockTimestamp = (await publicClient.getBlock()).timestamp * 1000n;
 
-  return (
-    <Client
-      multiSigData={multiSigData}
-      opsData={opsData}
-      endowmentData={endowmentData}
-      block={blockTimestamp}
-    />
-  );
+  const arbPrice = await getArbPrice();
+
+  return <Client multiSigData={multiSigData} block={blockTimestamp} />;
 }
 
 async function getMultiSigData({
@@ -157,14 +89,14 @@ async function getBalances({
   addresses: Address[];
 }): Promise<ContractInfo[]> {
   const promises = addresses.map(async (address) => {
-    const ensBalance = await getTokenBalance(ENS_TOKEN_CONTRACT, address);
-    const usdcBalance = await getTokenBalance(USDC_TOKEN_CONTRACT, address);
+    const arbBalance = await getTokenBalance(ARB_TOKEN_CONTRACT, address);
+    const usdcBalance = await getTokenBalance(USDC_ARB_TOKEN_CONTRACT, address);
     const ethBalance = await publicClient.getBalance({ address });
 
     return {
       address,
       ethBalance,
-      ensBalance,
+      arbBalance,
       usdcBalance,
     };
   });
@@ -286,35 +218,10 @@ async function getTokenDetails(
     };
   }
 }
-
-async function fetchAllTokenDetails(
-  userAddress: Address
-): Promise<TokenDetails[]> {
-  try {
-    const promises = tokenContracts.map((tokenContractAddress) =>
-      getTokenDetails(tokenContractAddress as Address, userAddress)
-    );
-
-    const results = await Promise.all(promises);
-    return results; // Return the array of token details
-  } catch (error) {
-    console.error("Error fetching token details:", error);
-    throw error; // Re-throw the error to handle it in the calling function
-  }
-}
-
-async function getEthPrice(): Promise<bigint> {
+async function getArbPrice(): Promise<bigint> {
   return await publicClient.readContract({
-    address: usdEth,
-    abi: abiUsdEthRate,
+    address: arbUsdc,
+    abi: abiUsdArbRate,
     functionName: "latestAnswer",
-  });
-}
-
-async function getrEthRate(): Promise<bigint> {
-  return await publicClient.readContract({
-    address: rEth,
-    abi: abiREthRate,
-    functionName: "getExchangeRate",
   });
 }

@@ -7,6 +7,7 @@ export type ContractInfo = {
   ethBalance?: bigint;
   usdcBalance?: bigint;
   ensBalance?: bigint;
+  arbBalance?: bigint;
   multisig?: boolean;
 };
 

@@ -110,3 +110,13 @@ export const abiUsdEthRate = [
     type: "function",
   },
 ] as const;
+
+export const abiUsdArbRate = [
+  {
+    inputs: [],
+    name: "latestAnswer",
+    outputs: [{ internalType: "int256", name: "", type: "int256" }],
+    stateMutability: "view",
+    type: "function",
+  },
+] as const;

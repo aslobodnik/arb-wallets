@@ -7,7 +7,7 @@ export const multiSigs: ContractInfo[] = [
   },
   {
     address: "0x5a5c8Da41220EeF8E7f423f6e9028da5b9E70f8B",
-    label: "STIP",
+    label: "Short-Term Incentive Program",
   },
   {
     address: "0x524E480DC669592757B3f22140Cc0950a9C2f489",

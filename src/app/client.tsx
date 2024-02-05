@@ -88,6 +88,11 @@ export function Client({
     0n
   );
 
+  const totalUsd = filteredData.reduce(
+    (acc, curr) => acc + (curr.usdValue || 0n),
+    0n
+  );
+
   const date = new Date(Number(block));
   console.log(date.toString());
 
@@ -96,9 +101,10 @@ export function Client({
       <h1 className="sm:text-3xl text-2xl sm:mt-0 my-10 font-extrabold ">
         Arbitrum Multisigs
       </h1>
-      <div className="absolute mt-9 text-xs  text-gray-200">
+      <div className="absolute mt-9 text-xs hidden sm:block  text-gray-200">
         {date.toLocaleDateString()}
       </div>
+
       <div>
         {/*Desktop Table*/}
         <Table className="hidden sm:block">
@@ -155,6 +161,16 @@ export function Client({
                       {formatCurrency(multisig.ethBalance as bigint, 18, 1)}{" "}
                       &nbsp;ETH
                     </span>
+
+                    <span>
+                      {formatCurrency(
+                        multisig.usdcBalance as bigint,
+                        6,
+                        1,
+                        true
+                      )}{" "}
+                      USDC
+                    </span>
                     <span>
                       {formatCurrency(
                         multisig.arbBalance as bigint,
@@ -164,14 +180,10 @@ export function Client({
                       )}{" "}
                       &nbsp;ARB
                     </span>
-                    <span>
-                      {formatCurrency(
-                        multisig.usdcBalance as bigint,
-                        6,
-                        1,
-                        true
-                      )}{" "}
-                      USDC
+
+                    <span className="overline decoration-double mb-1">
+                      {formatCurrency(multisig.usdValue as bigint, 18, 1, true)}{" "}
+                      &nbsp;USD
                     </span>
                   </div>
                 </TableCell>
@@ -198,6 +210,9 @@ export function Client({
                   <span>
                     {formatCurrency(totalArb as bigint, 18, 1, true)} &nbsp;ARB
                   </span>
+                  <span className="overline decoration-double mb-1">
+                    {formatCurrency(totalUsd as bigint, 18, 1, true)} &nbsp;USD
+                  </span>
                 </div>
               </TableCell>
             </TableRow>
@@ -223,13 +238,13 @@ export function Client({
                   Multisig
                 </TableHead>
                 <TableHead className="text-center">Signers</TableHead>
-                <TableHead className="text-center  ">Balances</TableHead>
+                <TableHead className="text-center">Balances</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filteredData.map((multisig, index) => (
                 <TableRow key={index}>
-                  <TableCell className="font-medium truncate text-xs max-w-9 p-1">
+                  <TableCell className="font-medium  text-xs max-w-9 p-1">
                     <div className="text-xs text-left pt-2 text-gray-800">
                       {multisig.label}
                     </div>
@@ -274,6 +289,16 @@ export function Client({
                         )}{" "}
                         &nbsp;ARB
                       </span>
+
+                      <span className="overline decoration-double mb-1">
+                        {formatCurrency(
+                          multisig.usdValue as bigint,
+                          18,
+                          1,
+                          true
+                        )}{" "}
+                        &nbsp;USD
+                      </span>
                     </div>
                   </TableCell>
                 </TableRow>
@@ -286,15 +311,18 @@ export function Client({
                   />
                   Show Zero Balance
                 </TableCell>
-                <TableCell className="text-right  text-xl font-bold">
+                <TableCell className="text-right  text-base font-bold">
                   Total
                 </TableCell>
-                <TableCell className="text-right font-mono font-bold">
+                <TableCell className="text-right text-xs font-mono font-bold">
                   <div className="flex flex-col">
                     <span>{formatCurrency(totalEth, 18, 1)} &nbsp;ETH</span>
                     <span>{formatCurrency(totalUsdc, 6, 0, true)} USDC</span>
                     <span>
                       {formatCurrency(totalArb, 18, 0, true)} &nbsp;ARB
+                    </span>
+                    <span className="overline decoration-double mb-1">
+                      {formatCurrency(totalUsd, 18, 0, true)} &nbsp;USD
                     </span>
                   </div>
                 </TableCell>

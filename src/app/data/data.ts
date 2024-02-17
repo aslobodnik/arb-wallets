@@ -45,4 +45,8 @@ export const multiSigs: ContractInfo[] = [
     address: "0xB7c1551BBEB47Eb86266153df5F9D7dA47F08308",
     label: "Questbook: Program Manager",
   },
+  {
+    address: "0x544cBe6698E2e3b676C76097305bBa588dEfB13A",
+    label: "Long-Term Incentive Pilot Program",
+  },
 ];
